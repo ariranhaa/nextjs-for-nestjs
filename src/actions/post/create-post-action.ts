@@ -3,8 +3,11 @@
 import { makePartialPublicPost, PublicPost } from "@/dto/post/dto";
 import { PostCreateSchema } from "@/lib/post/validation";
 import { PostModel } from "@/models/post/post-models";
+import { postRepository } from "@/repositories/post";
 import { getZodErrorMessages } from "@/utils/get-zod-error-messages";
 import { makeSlugFromText } from "@/utils/make-slug-from-text";
+import { revalidateTag } from "next/cache";
+import { redirect } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 
 type CreatePostActionState = {
@@ -42,5 +45,21 @@ export async function createPostAction(
     slug: makeSlugFromText(validPostData.title),
   };
 
-  return { formState: newPost, errors: [] };
+  try {
+    await postRepository.create(newPost);
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      return {
+        formState: newPost,
+        errors: [e.message],
+      };
+    }
+    return {
+      formState: newPost,
+      errors: ["Erro desconhecido"],
+    };
+  }
+
+  revalidateTag("posts");
+  redirect(`/admin/post/${newPost.id}`);
 }
