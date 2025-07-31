@@ -8,7 +8,6 @@ import {
 import { PostUpdateSchema } from "@/lib/post/validation";
 
 import { postRepository } from "@/repositories/post";
-import { asyncDelay } from "@/utils/async-delay";
 import { getZodErrorMessages } from "@/utils/get-zod-error-messages";
 import { makeRandomString } from "@/utils/make-random-string";
 
@@ -25,8 +24,6 @@ export async function updatePostAction(
   formData: FormData
 ): Promise<UpdatePostActionState> {
   //TODO verificar se o usuario esta logado
-
-  await asyncDelay(3000);
 
   if (!(formData instanceof FormData)) {
     return { formState: prevState.formState, errors: ["Dados inválidos"] };
