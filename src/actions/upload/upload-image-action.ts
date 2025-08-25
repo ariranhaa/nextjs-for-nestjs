@@ -1,8 +1,7 @@
 "use server";
 
-import { mkdir, writeFile } from "fs/promises";
-
-import { extname, resolve } from "path";
+import { getLoginSessionForApi } from "@/lib/login/manage-login";
+import { authenticatedApiRequest } from "@/utils/authenticated-api-request";
 
 type UploadImageActionResult = {
   url: string;
@@ -12,9 +11,13 @@ type UploadImageActionResult = {
 export async function uploadImageAction(
   formData: FormData
 ): Promise<UploadImageActionResult> {
-  //TODO: verificar se o usuario esta logado
-
   const makeResult = ({ url = "", error = "" }) => ({ url, error });
+
+  const isAuthenticated = await getLoginSessionForApi();
+
+  if (!isAuthenticated) {
+    return makeResult({ error: "Faça login novamente" });
+  }
 
   if (!(formData instanceof FormData)) {
     return makeResult({ error: "Dados inválidos" });
@@ -27,33 +30,28 @@ export async function uploadImageAction(
   }
 
   const uploadMaxSize =
-    Number(process.env.NEXT_PUBLIC_IMAGE_UPLOADER_MAX_SIZE) || 921600;
+    Number(process.env.NEXT_PUBLIC_IMAGE_UPLOAD_MAX_SIZE) || 921600;
   if (file.size > uploadMaxSize) {
-    return makeResult({ error: "Arquivo excete o tamanho limite" });
+    return makeResult({ error: "Arquivo muito grande" });
   }
 
   if (!file.type.startsWith("image/")) {
     return makeResult({ error: "Imagem inválida" });
   }
 
-  const imageExtension = extname(file.name);
-  const uniqueImageName = `${Date.now()}${imageExtension}`;
+  const uploadResponse = await authenticatedApiRequest<{ url: string }>(
+    `/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
 
-  const uploadDir = process.env.IMAGE_UPLOAD_DIRECTORY || "uploads";
-  const uploadFullPath = resolve(process.cwd(), "public", uploadDir);
-  await mkdir(uploadFullPath, { recursive: true });
+  if (!uploadResponse.success) {
+    return makeResult({ error: uploadResponse.errors[0] });
+  }
 
-  const fileArrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(fileArrayBuffer);
+  const url = `${process.env.IMAGE_SERVER_URL}${uploadResponse.data.url}`;
 
-  const fileFullPath = resolve(uploadFullPath, uniqueImageName);
-
-  await writeFile(fileFullPath, buffer);
-
-  const imgServerUrl =
-    process.env.IMAGE_SERVER_URL || "http://localhost:3000/uploads";
-  const url = `${imgServerUrl}/${uniqueImageName}`;
-  console.log(url);
-  //TODO: enviei o arquivo
   return makeResult({ url });
 }

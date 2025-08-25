@@ -1,4 +1,4 @@
-import { PostModel } from "@/models/post/post-models";
+import { PostModel } from "@/models/post/post-model";
 import { PostRepository } from "./post-repository";
 import { drizzleDb } from "@/db/drizzle";
 import { asyncDelay } from "@/utils/async-delay";

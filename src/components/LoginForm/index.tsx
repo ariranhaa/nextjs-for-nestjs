@@ -9,10 +9,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { HoneypotInput } from "../HoneypotInput";
 
-export const dynamic = "force-dynamic";
-
-export default function LoginForm() {
+export function LoginForm() {
   const initialState = {
     email: "",
     errors: [],
@@ -72,7 +71,10 @@ export default function LoginForm() {
           labelText="Senha"
           placeholder="Sua senha"
           disabled={isPending}
+          required
         />
+
+        <HoneypotInput />
 
         <Button disabled={isPending} type="submit" className="mt-4">
           <LogInIcon />

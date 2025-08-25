@@ -1,18 +1,26 @@
+import { findAllPublicPostsFromApiCached } from "@/lib/post/queries/public";
 import ErrorMessage from "../ErrorMessage";
 import { PostCoverImage } from "../PostCoverImage";
 import { PostSummary } from "../PostSummary";
-import { findAllPublicPosts } from "@/lib/post/queries/public";
 
 export async function PostFeatured() {
-  const posts = await findAllPublicPosts();
+  const postsRes = await findAllPublicPostsFromApiCached();
+  const noPostsFound = (
+    <ErrorMessage
+      contentTitle="Ops!"
+      content="Ainda não criamos nenhum post."
+    />
+  );
 
-  if (posts.length <= 0)
-    return (
-      <ErrorMessage
-        contentTitle="Ops!"
-        content="Ainda não criamos nenhum post"
-      />
-    );
+  if (!postsRes.success) {
+    return noPostsFound;
+  }
+
+  const posts = postsRes.data;
+
+  if (posts.length <= 0) {
+    return noPostsFound;
+  }
 
   const post = posts[0];
 
@@ -32,6 +40,7 @@ export async function PostFeatured() {
           priority: true,
         }}
       />
+
       <PostSummary
         postLink={postLink}
         postHeading="h1"
